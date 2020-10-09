@@ -24,6 +24,16 @@ def KL_div(mu,logvar,reduction = 'avg'):
         return KL
 
 
+def perturb(x, mu,device):
+    b,c,h,w = x.size()
+    mask = torch.rand(b,c,h,w)<mu
+    mask = mask.float().to(device)
+    noise = torch.FloatTensor(x.size()).random_(0, 256).to(device)
+    x = x*255
+    perturbed_x = ((1-mask)*x + mask*noise)/255.
+    return perturbed_x
+
+
 if __name__=="__main__":
 
     parser = argparse.ArgumentParser()
@@ -42,6 +52,9 @@ if __name__=="__main__":
 
     parser.add_argument('--ngpu'  , type=int, default=1, help='number of GPUs to use')
     parser.add_argument('--experiment', default=None, help='Where to store samples and models')
+    parser.add_argument('--perturbed', action='store_true', help='Whether to train on perturbed data, used for comparing with likelihood ratio by Ren et al.')
+    parser.add_argument('--ratio', type=float, default=0.2, help='ratio for perturbation of data, see Ren et al.')
+
     opt = parser.parse_args()
     
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -109,6 +122,9 @@ if __name__=="__main__":
     for epoch in range(opt.niter):
         for i, (x, _) in enumerate(dataloader_fmnist):
             x = x.to(device)
+            if opt.perturbed:
+                x = perturb(x, opt.ratio, device)
+
             b = x.size(0)
             target = Variable(x.data.view(-1) * 255).long()
             [z,mu,logvar] = netE(x)
