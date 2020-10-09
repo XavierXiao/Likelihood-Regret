@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Feb 18 22:38:49 2020
-
-@author: xiaoz
-"""
 import argparse
 import numpy as np
 import torch
@@ -252,15 +246,3 @@ if __name__=="__main__":
     difference_ood = np.asarray(difference_ood)
         
     np.save('./array/complexity/difference_ood.npy', difference_ood)
-   
-  
-
-
-      
-
-
-
-
-    
-        
-    
