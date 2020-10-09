@@ -54,7 +54,8 @@ def compute_NLL(weights):
 if __name__=="__main__":
 
     parser = argparse.ArgumentParser()
-    
+    parser.add_argument('--dataroot', default='./data', help='path to dataset')
+
     parser.add_argument('--workers', type=int, help='number of data loading workers', default=0)
     parser.add_argument('--imageSize', type=int, default=32, help='the height / width of the input image to network')
     parser.add_argument('--nc', type=int, default=1, help='input image channels')
