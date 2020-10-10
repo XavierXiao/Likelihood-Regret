@@ -32,4 +32,4 @@ python aucroc.py
 
 ## Pre-trained Models
 
-You can download pretrained VAE models on FMNIST and CIFAR-10[here](https://drive.google.com/drive/folders/1nX7PmSUq7APE4hTNzAjspIbgAxkChPuM?usp=sharing).
+You can download pretrained VAE models on FMNIST and CIFAR-10 [here](https://drive.google.com/drive/folders/1nX7PmSUq7APE4hTNzAjspIbgAxkChPuM?usp=sharing).
