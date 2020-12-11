@@ -12,6 +12,20 @@ from torch.autograd import Variable
 import DCGAN_VAE_pixel as DVAE
 import torch.nn.functional as F
 import copy
+from torchvision.datasets import ImageFolder
+
+
+class CustomImageFolder(ImageFolder):
+    def __init__(self, root, transform=None):
+        super(CustomImageFolder, self).__init__(root, transform)
+
+    def __getitem__(self, index):
+        path = self.imgs[index][0]
+        img = self.loader(path)
+        if self.transform is not None:
+            img = self.transform(img)
+
+        return (img,index)
 
 
 def KL_div(mu,logvar,reduction = 'none'):
@@ -27,6 +41,7 @@ def KL_div(mu,logvar,reduction = 'none'):
 
 def store_NLL(x, recon, mu, logvar, z):
     with torch.no_grad():
+        sigma = torch.exp(0.5*logvar)
         b = x.size(0)
         target = Variable(x.data.view(-1) * 255).long()
         recon = recon.contiguous()
@@ -35,7 +50,7 @@ def store_NLL(x, recon, mu, logvar, z):
         log_p_x_z = -torch.sum(cross_entropy.view(b ,-1), 1)
       
         log_p_z = -torch.sum(z**2/2+np.log(2*np.pi)/2,1)
-        z_eps = z - mu
+        z_eps = (z - mu)/sigma
         z_eps = z_eps.view(opt.repeat,-1)
         log_q_z_x = -torch.sum(z_eps**2/2 + np.log(2*np.pi)/2 + logvar/2, 1)
         
@@ -70,7 +85,7 @@ if __name__=="__main__":
     parser.add_argument('--ngpu'  , type=int, default=1, help='number of GPUs to use')
     
     parser.add_argument('--state_E', default='./saved_models/fmnist/netE_pixel.pth', help='path to encoder checkpoint')
-    parser.add_argument('--state_G', default='./saved_models/fmnist/netG_pixel.pth', help='path to encoder checkpoint')
+    parser.add_argument('--state_G', default='./saved_models/fmnist/netG_pixel.pth', help='path to decoder checkpoint')
 
     opt = parser.parse_args()
     
@@ -98,6 +113,7 @@ if __name__=="__main__":
 #    test_loader_svhn = torch.utils.data.DataLoader(dataset_svhn, batch_size=1,
 #                                            shuffle = True, num_workers=int(opt.workers))
     
+
     
     dataset_fmnist = dset.FashionMNIST(root=opt.dataroot, train=False, download=True, transform=transforms.Compose([
                                 transforms.Resize((opt.imageSize)),
@@ -224,6 +240,8 @@ if __name__=="__main__":
 ###################################################################################################    
     NLL_regret_ood = []
     NLL_ood = []
+    
+
 
     for i, (xi, _) in enumerate(test_loader_mnist):
         
@@ -237,7 +255,7 @@ if __name__=="__main__":
 #        for k in range(opt.nc):
 #            temp[:,k,:,:] = level[k]*temp[:,k,:,:]
 #        xi = temp
-
+        
         x = xi.expand(opt.repeat,-1,-1,-1).contiguous()
         weights_agg  = []
         with torch.no_grad():
