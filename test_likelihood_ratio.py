@@ -32,6 +32,7 @@ def KL_div(mu,logvar,reduction = 'none'):
 
 def store_NLL(x, recon, mu, logvar, z):
     with torch.no_grad():
+        sigma = torch.exp(0.5*logvar)
         b = x.size(0)
         target = Variable(x.data.view(-1) * 255).long()
         recon = recon.contiguous()
@@ -40,7 +41,7 @@ def store_NLL(x, recon, mu, logvar, z):
         log_p_x_z = -torch.sum(cross_entropy.view(b ,-1), 1)
       
         log_p_z = -torch.sum(z**2/2+np.log(2*np.pi)/2,1)
-        z_eps = z - mu
+        z_eps = (z - mu)/sigma
         z_eps = z_eps.view(opt.repeat,-1)
         log_q_z_x = -torch.sum(z_eps**2/2 + np.log(2*np.pi)/2 + logvar/2, 1)
         
@@ -191,7 +192,7 @@ if __name__=="__main__":
             NLL_test_indist.append(NLL_loss.detach().cpu().numpy())
             NLL_test_indist_bg.append(NLL_loss_bg.detach().cpu().numpy())
             diff = -NLL_loss.item() + NLL_loss_bg.item()
-            print('Indist VAE: image {} NLL {}, NLL BG {}, diff {}'.format(i, NLL_loss.item(),NLL_loss_bg.item(), diff))
+            print('Indist: image {} NLL {}, NLL BG {}, diff {}'.format(i, NLL_loss.item(),NLL_loss_bg.item(), diff))
             
         if i >= 499:
             break
@@ -212,7 +213,7 @@ if __name__=="__main__":
         weights_agg  = []
         weights_agg_bg = []
         with torch.no_grad():
-            for batch_number in range(5):
+            for batch_number in range(10):
                 x = x.to(device)
                 b = x.size(0)
                 
@@ -241,7 +242,7 @@ if __name__=="__main__":
             NLL_test_ood.append(NLL_loss.detach().cpu().numpy())
             NLL_test_ood_bg.append(NLL_loss_bg.detach().cpu().numpy())
             diff = -NLL_loss.item() + NLL_loss_bg.item()
-            print('MNIST VAE: image {} NLL {}, NLL BG {}, diff: {}'.format(i, NLL_loss.item(),NLL_loss_bg.item(), diff))
+            print('OOD: image {} NLL {}, NLL BG {}, diff: {}'.format(i, NLL_loss.item(),NLL_loss_bg.item(), diff))
         if i >= 499:
             break
     NLL_test_ood = np.asarray(NLL_test_ood)
